@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tip Calculator</title>
+<style>
+  :root{
+    --bg:#faf8f4;
+    --ink:#1f1d1a;
+    --muted:#7a746c;
+    --line:#e2dcd2;
+    --accent:#7a5c43;
+    --error:#9b3a2f;
+    --hover:#f0ece4;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page{
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .masthead{
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+
+  .eyebrow{
+    margin:0 0 12px;
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  h1{
+    margin:0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: clamp(28px, 5vw, 38px);
+    line-height:1.05;
+    letter-spacing:-0.01em;
+  }
+
+  .lede{
+    margin:10px 0 0;
+    font-size:14px;
+    color:var(--muted);
+    max-width: 48ch;
+  }
+
+  .layout{
+    display:grid;
+    gap: 40px;
+  }
+
+  @media (min-width: 820px){
+    .layout{
+      grid-template-columns: 1.1fr .9fr;
+      gap: 56px;
+      align-items: start;
+    }
+    .results{
+      border-left: 1px solid var(--line);
+      padding-left: 48px;
+    }
+  }
+
+  @media (max-width: 819px){
+    .results{
+      margin-top: 8px;
+      padding-top: 32px;
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  .field{
+    margin-bottom: 28px;
+  }
+  .field:last-child{ margin-bottom:0; }
+
+  .label,
+  label{
+    display:block;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+
+  .input-wrap{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    border-bottom:1px solid var(--line);
+    padding:6px 0 8px;
+    transition: border-color .2s;
+  }
+  .input-wrap:focus-within{
+    border-color: var(--ink);
+  }
+
+  .prefix{
+    font-size:16px;
+    color:var(--muted);
+  }
+
+  .input-wrap input{
+    border:0;
+    background:transparent;
+    outline:none;
+    width:100%;
+    font: inherit;
+    font-size:18px;
+    color:inherit;
+    letter-spacing:.02em;
+  }
+
+  .input-wrap input::placeholder{
+    color:#b9b2a8;
+  }
+
+  .tip-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap: 22px;
+    padding: 4px 0 2px;
+  }
+
+  .tip{
+    background:none;
+    border:0;
+    padding:4px 0;
+    font: inherit;
+    font-size:15px;
+    color:var(--muted);
+    cursor:pointer;
+    border-bottom:1px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tip:hover{ color:var(--ink); }
+  .tip.active{
+    color:var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  #customTip{
+    margin-top: 10px;
+  }
+
+  .field--inline{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .field--inline .label{ margin-bottom:0; }
+
+  .stepper{
+    display:inline-flex;
+    align-items:center;
+    border:1px solid var(--line);
+  }
+
+  .step{
+    width:40px;
+    height:40px;
+    border:0;
+    background:transparent;
+    cursor:pointer;
+    font-size:18px;
+    color:var(--ink);
+    line-height:1;
+    transition: background .15s;
+  }
+  .step:hover{ background:var(--hover); }
+
+  .stepper input{
+    width:56px;
+    height:40px;
+    border:0;
+    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+    background:transparent;
+    text-align:center;
+    font: inherit;
+    font-size:16px;
+    outline:none;
+  }
+
+  .hint{
+    min-height: 16px;
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing:.01em;
+  }
+  .hint.error{
+    color: var(--error);
+  }
+
+  .ledger{
+    margin: 0;
+  }
+
+  .ledger > div{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger > div:last-child{
+    border-bottom:0;
+    padding-bottom:0;
+  }
+  .ledger > div:first-child{
+    padding-top:0;
+  }
+
+  .ledger dt{
+    margin:0;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  .ledger dd{
+    margin:0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 20px;
+    letter-spacing:-0.01em;
+    white-space:nowrap;
+  }
+
+  .ledger dd.accent{
+    color: var(--accent);
+  }
+
+  .ledger.invalid dd{
+    color: #b9b2a8;
+  }
+
+  .result-note{
+    margin: 16px 0 0;
+    font-size:12px;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <p class="eyebrow">Utility — 01</p>
+      <h1>Tip Calculator</h1>
+      <p class="lede">A quiet calculator for splitting the bill. Enter the amount, choose a tip, and divide among people.</p>
+    </header>
+
+    <div class="layout">
+      <section class="inputs" aria-label="Inputs">
+        <div class="field">
+          <label for="bill">Bill amount</label>
+          <div class="input-wrap">
+            <span class="prefix">$</span>
+            <input id="bill" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" />
+          </div>
+          <p class="hint" id="billHint" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <span class="label">Tip</span>
+          <div class="tip-row" role="group" aria-label="Tip percentage">
+            <button type="button" class="tip active" data-tip="10">10</button>
+            <button type="button" class="tip" data-tip="15">15</button>
+            <button type="button" class="tip" data-tip="20">20</button>
+            <button type="button" class="tip" data-tip="custom">Custom</button>
+          </div>
+          <div class="input-wrap" id="customTipWrap">
+            <input id="customTip" type="text" inputmode="decimal" placeholder="Custom %" autocomplete="off" />
+            <span class="prefix">%</span>
+          </div>
+          <p class="hint" id="tipHint" role="alert"></p>
+        </div>
+
+        <div class="field field--inline">
+          <label for="people">People</label>
+          <div class="stepper">
+            <button type="button" class="step" data-step="-1" aria-label="Decrease people">−</button>
+            <input id="people" type="text" inputmode="numeric" value="1" autocomplete="off" />
+            <button type="button" class="step" data-step="1" aria-label="Increase people">+</button>
+          </div>
+        </div>
+        <p class="hint" id="peopleHint" role="alert"></p>
+      </section>
+
+      <section class="results" aria-label="Results">
+        <dl class="ledger" id="ledger">
+          <div>
+            <dt>Tip</dt>
+            <dd id="tipAmount">—</dd>
+          </div>
+          <div>
+            <dt>Total</dt>
+            <dd id="totalAmount">—</dd>
+          </div>
+          <div>
+            <dt>Tip / person</dt>
+            <dd id="tipPerPerson">—</dd>
+          </div>
+          <div>
+            <dt>Total / person</dt>
+            <dd id="totalPerPerson" class="accent">—</dd>
+          </div>
+        </dl>
+        <p class="result-note" id="resultNote">Enter a bill amount to begin.</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const billEl = document.getElementById('bill');
+    const peopleEl = document.getElementById('people');
+    const customTipEl = document.getElementById('customTip');
+    const tipButtons = Array.from(document.querySelectorAll('.tip'));
+    const billHint = document.getElementById('billHint');
+    const tipHint = document.getElementById('tipHint');
+    const peopleHint = document.getElementById('peopleHint');
+    const ledger = document.getElementById('ledger');
+    const resultNote = document.getElementById('resultNote');
+
+    const out = {
+      tip: document.getElementById('tipAmount'),
+      total: document.getElementById('totalAmount'),
+      tipP: document.getElementById('tipPerPerson'),
+      totalP: document.getElementById('totalPerPerson'),
+    };
+
+    let mode = '10';
+
+    function parseNumeric(raw){
+      const s = String(raw).trim().replace(/,/g, '').replace(/^\$/, '');
+      if (s === '') return { empty: true };
+      const n = Number(s);
+      if (!Number.isFinite(n)) return { invalid: true };
+      return { value: n };
+    }
+
+    function parsePeople(raw){
+      const s = String(raw).trim();
+      if (s === '') return { empty: true };
+      if (!/^\d+$/.test(s)) return { invalid: true };
+      return { value: Number(s) };
+    }
+
+    function setHint(el, message){
+      el.textContent = message || '';
+      el.classList.toggle('error', Boolean(message));
+    }
+
+    function updateTipButtons(){
+      tipButtons.forEach(b => {
+        b.classList.toggle('active', b.dataset.tip === mode);
+      });
+    }
+
+    function formatMoney(n){
+      return '$' + n.toFixed(2);
+    }
+
+    function clearResults(){
+      ledger.classList.add('invalid');
+      out.tip.textContent = '—';
+      out.total.textContent = '—';
+      out.tipP.textContent = '—';
+      out.totalP.textContent = '—';
+    }
+
+    function calculate(){
+      let ok = true;
+
+      const b = parseNumeric(billEl.value);
+      if (b.empty){
+        setHint(billHint, '');
+        ok = false;
+      } else if (b.invalid){
+        setHint(billHint, 'Enter a valid number');
+        ok = false;
+      } else if (b.value < 0){
+        setHint(billHint, "Amount can't be negative");
+        ok = false;
+      } else if (b.value > 10000000){
+        setHint(billHint, 'That is a very large bill — please check');
+        ok = false;
+      } else {
+        setHint(billHint, '');
+      }
+
+      const p = parsePeople(peopleEl.value);
+      if (p.empty){
+        setHint(peopleHint, 'At least 1 person');
+        ok = false;
+      } else if (p.invalid){
+        setHint(peopleHint, 'Whole numbers only');
+        ok = false;
+      } else if (p.value < 1){
+        setHint(peopleHint, 'At least 1 person');
+        ok = false;
+      } else if (p.value > 10000){
+        setHint(peopleHint, 'That is a lot of people — please check');
+        ok = false;
+      } else {
+        setHint(peopleHint, '');
+      }
+
+      let tipPercent = 0;
+      if (mode === 'custom'){
+        const t = parseNumeric(customTipEl.value);
+        if (t.empty){
+          setHint(tipHint, 'Enter a tip percentage');
+          ok = false;
+        } else if (t.invalid){
+          setHint(tipHint, 'Enter a valid number');
+          ok = false;
+        } else if (t.value < 0){
+          setHint(tipHint, "Tip can't be negative");
+          ok = false;
+        } else if (t.value > 500){
+          setHint(tipHint, 'That tip looks unusually high');
+          ok = false;
+        } else {
+          setHint(tipHint, '');
+          tipPercent = t.value;
+        }
+      } else {
+        setHint(tipHint, '');
+        tipPercent = Number(mode);
+      }
+
+      if (!ok || b.empty){
+        clearResults();
+        resultNote.textContent = ok ? 'Enter a bill amount to begin.' : 'Check the highlighted fields above.';
+        return;
+      }
+
+      ledger.classList.remove('invalid');
+      const bill = b.value;
+      const people = p.value;
+      const tip = bill * tipPercent / 100;
+      const total = bill + tip;
+
+      out.tip.textContent = formatMoney(tip);
+      out.total.textContent = formatMoney(total);
+      out.tipP.textContent = formatMoney(tip / people);
+      out.totalP.textContent = formatMoney(total / people);
+
+      resultNote.textContent = `Split between ${people} ${people === 1 ? 'person' : 'people'}.`;
+    }
+
+    billEl.addEventListener('input', calculate);
+    peopleEl.addEventListener('input', calculate);
+
+    customTipEl.addEventListener('input', () => {
+      mode = 'custom';
+      updateTipButtons();
+      calculate();
+    });
+
+    tipButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.dataset.tip;
+        if (v === 'custom'){
+          mode = 'custom';
+          updateTipButtons();
+          customTipEl.focus();
+        } else {
+          mode = v;
+          updateTipButtons();
+        }
+        calculate();
+      });
+    });
+
+    document.querySelectorAll('.step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const step = Number(btn.dataset.step);
+        const p = parsePeople(peopleEl.value);
+        let current = (!p.invalid && !p.empty) ? p.value : 1;
+        current = Math.max(1, current + step);
+        peopleEl.value = String(current);
+        calculate();
+      });
+    });
+
+    updateTipButtons();
+    calculate();
+  </script>
+</body>
+</html>
